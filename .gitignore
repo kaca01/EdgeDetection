@@ -7,7 +7,7 @@
 *.o
 *.obj
 *.vs
-*.bpm
+*.bmp
 
 # Precompiled Headers
 *.gch
