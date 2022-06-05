@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+vezba03.vcxproj.filters
+vezba03.vcxproj
+vezba03.vcxproj.user
+
