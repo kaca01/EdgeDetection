@@ -23,18 +23,20 @@ void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)
 {
 	for (int i = 1; i < width - 1; i++) { 
 		for (int j = 1; j < height - 1; j++) {
-			int Gx, Gy, G = 0;
+			int Gx = 0, Gy = 0, G = 0;
 			
 			for (int m = -1; m <= 1; m++) {
 				for (int n = -1; n <= 1; n++) {
-					Gx += inBuffer[(j + n) * width + (i + m)] * n;  
-					Gy += inBuffer[(j + n) * width + (i + m)] * m;
+					int index = (j + n) * width + (i + m);
+					Gx += inBuffer[index] * n; 
+					Gy += inBuffer[index] * m;
 				}
 			}
 			G = abs(Gx) + abs(Gy);
 
-			if (G >= THRESHOLD) outBuffer[j * width + i] = 0;
-			else outBuffer[j * width + i] = 255;
+			// transferring to black or white color
+			if (G >= THRESHOLD) outBuffer[j * width + i] = 255;
+			else outBuffer[j * width + i] = 0;
 			
 		}
 	}
@@ -62,6 +64,33 @@ void filter_parallel_prewitt(int *inBuffer, int *outBuffer, int width, int heigh
 */
 void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int height)	//TODO obrisati
 {
+	// setting every element to 0 or 255, depending on threshold
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < height; j++) {
+			int index = j * width + i;
+			if (inBuffer[index] >= THRESHOLD) inBuffer[index] = 0;
+			else inBuffer[index] = 1;
+		}
+	}
+
+	for (int i = 1; i < width - 1; i++) {
+		for (int j = 1; j < height - 1; j++) {
+			int P = 0, O = 0, G = 0;
+
+			for (int m = -1; m <= 1; m++) {
+				for (int n = -1; n <= 1; n++) {
+					int index = (j + n) * width + (i + m);
+					if (m == 0 && n == 0) continue;
+					if (inBuffer[index] == 1) P = 1;
+					else if (inBuffer[index] == 0) O = 0;
+				}
+			}
+
+			G = abs(P) - abs(O);
+			if (G == 0) outBuffer[j * width + i] = 255;
+			else outBuffer[j * width + i] = 0;
+		}
+	}
 }
 
 /**
