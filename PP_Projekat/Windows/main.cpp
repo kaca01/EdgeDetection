@@ -21,25 +21,21 @@ int filterVer[FILTER_SIZE * FILTER_SIZE] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 */
 void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)  //TODO obrisati
 {
-	for (int i = 1; i < width - 1; i++) {
+	for (int i = 1; i < width - 1; i++) { 
 		for (int j = 1; j < height - 1; j++) {
-			int Fx = 0;
-			int Fy = 0;
-			int F = 0;
+			int Gx, Gy, G = 0;
+			
 			for (int m = -1; m <= 1; m++) {
 				for (int n = -1; n <= 1; n++) {
-					Fx += inBuffer[(j + n) * width + (i + m)] * n;
-					Fy += inBuffer[(j + n) * width + (i + m)] * m;
+					Gx += inBuffer[(j + n) * width + (i + m)] * n;  
+					Gy += inBuffer[(j + n) * width + (i + m)] * m;
 				}
 			}
-			F = abs(Fx) + abs(Fy);
+			G = abs(Gx) + abs(Gy);
 
-			if (F < THRESHOLD) {
-				outBuffer[j * width + i] = 255;
-			}
-			else {
-				outBuffer[j * width + i] = 0;
-			}
+			if (G >= THRESHOLD) outBuffer[j * width + i] = 0;
+			else outBuffer[j * width + i] = 255;
+			
 		}
 	}
 }
