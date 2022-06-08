@@ -58,8 +58,8 @@ void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)
 void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuffer, int *outBuffer, int _width)
 {
 	if (width <= 16 || height <= 16) {
-		for (int i = 1; i < width - 1; i++) {
-			for (int j = 1; j < height - 1; j++) {
+		for (int i = 1; i < width; i++) {
+			for (int j = 1; j < height; j++) {
 				int Gx = 0, Gy = 0, G = 0;
 
 				for (int m = -1; m <= 1; m++) {
@@ -80,10 +80,10 @@ void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuf
 	}
 	else {
 		task_group t;
-		t.run([&] {filter_parallel_prewitt(row, col, width / 2, height / 2, inBuffer, outBuffer, _width); });
-		t.run([&] {filter_parallel_prewitt(row + width / 2, col, width / 2, height / 2, inBuffer, outBuffer, _width); });
-		t.run([&] {filter_parallel_prewitt(row, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width); });
-		t.run([&] {filter_parallel_prewitt(row + width / 2, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width); });
+		t.run([&] {filter_parallel_prewitt(row - 1, col, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
+		t.run([&] {filter_parallel_prewitt(row + width / 2 - 1, col, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
+		t.run([&] {filter_parallel_prewitt(row - 1, col + height / 2 - 1, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
+		t.run([&] {filter_parallel_prewitt(row + width / 2 - 1, col + height / 2 - 1, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
 		t.wait();
 	}
 }
