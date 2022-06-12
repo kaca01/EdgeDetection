@@ -21,15 +21,24 @@ int filterVer[FILTER_SIZE * FILTER_SIZE] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 * @param width image width
 * @param height image height
 */
+
+
+bool check_if_border_case(int index, int height, int width) {
+	if ((index <= 0) || (index >= width * height)) return true;
+	return false;
+}
+
+
 void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)  //TODO obrisati
 {
-	for (int i = 1; i < width - 1; i++) { 
-		for (int j = 1; j < height - 1; j++) {
+	for (int i = 0; i < width; i++) { 
+		for (int j = 0; j < height; j++) {
 			int Gx = 0, Gy = 0, G = 0;
 			
 			for (int m = -1; m <= 1; m++) {
 				for (int n = -1; n <= 1; n++) {
 					int index = (j + n) * width + (i + m);
+					if (check_if_border_case(index, height, width)) continue;
 					Gx += inBuffer[index] * n; 
 					Gy += inBuffer[index] * m;
 				}
@@ -55,16 +64,17 @@ void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)
 */
 
 
-void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuffer, int *outBuffer, int _width)
+void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuffer, int *outBuffer, int _width, int _height)
 {
-	if (width <= 16 || height <= 16) {
-		for (int i = 1; i < width; i++) {
-			for (int j = 1; j < height; j++) {
+	if (width <= 200 || height <= 200) {
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
 				int Gx = 0, Gy = 0, G = 0;
 
 				for (int m = -1; m <= 1; m++) {
 					for (int n = -1; n <= 1; n++) {
 						int index = (j + n + col) * _width + (i + m + row);
+						if(check_if_border_case(index, _height, _width)) continue;
 						Gx += inBuffer[index] * n;
 						Gy += inBuffer[index] * m;
 					}
@@ -74,16 +84,15 @@ void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuf
 				// transferring to black or white color
 				if (G >= THRESHOLD) outBuffer[(j + col) * _width + i + row] = 255;
 				else outBuffer[(j + col) * _width + i + row] = 0;
-
 			}
 		}
 	}
 	else {
 		task_group t;
-		t.run([&] {filter_parallel_prewitt(row - 1, col, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
-		t.run([&] {filter_parallel_prewitt(row + width / 2 - 1, col, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
-		t.run([&] {filter_parallel_prewitt(row - 1, col + height / 2 - 1, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
-		t.run([&] {filter_parallel_prewitt(row + width / 2 - 1, col + height / 2 - 1, width / 2 + 1, height / 2 + 1, inBuffer, outBuffer, _width); });
+		t.run([&] {filter_parallel_prewitt(row, col, width / 2, height / 2, inBuffer, outBuffer, _width, _height); });
+		t.run([&] {filter_parallel_prewitt(row + width / 2 , col, width / 2, height / 2, inBuffer, outBuffer, _width, _height); });
+		t.run([&] {filter_parallel_prewitt(row, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width, _height); });
+		t.run([&] {filter_parallel_prewitt(row + width / 2, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width, _height); });
 		t.wait();
 	}
 }
@@ -106,13 +115,14 @@ void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int 
 		}
 	}
 
-	for (int i = 1; i < width - 1; i++) {
-		for (int j = 1; j < height - 1; j++) {
+	for (int i = 0; i < width ; i++) {
+		for (int j = 0; j < height; j++) {
 			int P = 0, O = 1, G = 0;
 
 			for (int m = -1; m <= 1; m++) {
 				for (int n = -1; n <= 1; n++) {
 					int index = (j + n) * width + (i + m);
+					if (check_if_border_case(index, height, width)) continue;
 					if (m == 0 && n == 0) continue;
 					if (inBuffer[index] == 1) P = 1;
 					else if (inBuffer[index] == 0) O = 0;
@@ -126,23 +136,17 @@ void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int 
 	}
 }
 
-void next_iter_parallel_edge_detection(int row, int col, int width, int height, int* inBuffer, int* outBuffer, int _width) {
-	if (width <= 16 && height <= 16) {
+void next_iter_parallel_edge_detection(int row, int col, int width, int height, int* inBuffer, int* outBuffer, int _width, int _height) {
+	if (width <= 200 && height <= 200) {
+
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
-				int index = (j + col) * _width + i + row;
-				if (inBuffer[index] >= THRESHOLD) inBuffer[index] = 0;
-				else inBuffer[index] = 1;
-			}
-		}
-
-		for (int i = 1; i < width - 1; i++) {
-			for (int j = 1; j < height - 1; j++) {
 				int P = 0, O = 1, G = 0;
 
 				for (int m = -1; m <= 1; m++) {
 					for (int n = -1; n <= 1; n++) {
 						int index = (j + n + col) * _width + (i + m + row);
+						if (check_if_border_case(index, _height, _width)) continue;
 						if (m == 0 && n == 0) continue;
 						if (inBuffer[index] == 1) P = 1;
 						else if (inBuffer[index] == 0) O = 0;
@@ -157,10 +161,10 @@ void next_iter_parallel_edge_detection(int row, int col, int width, int height, 
 	}
 	else {
 		task_group t;
-		t.run([&] {next_iter_parallel_edge_detection(row, col, width / 2, height / 2, inBuffer, outBuffer, _width); });
-		t.run([&] {next_iter_parallel_edge_detection(row + width / 2, col, width / 2, height / 2, inBuffer, outBuffer, _width); });
-		t.run([&] {next_iter_parallel_edge_detection(row, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width); });
-		t.run([&] {next_iter_parallel_edge_detection(row + width / 2, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width); });
+		t.run([&] {next_iter_parallel_edge_detection(row, col, width / 2, height / 2, inBuffer, outBuffer, _width,_height); });
+		t.run([&] {next_iter_parallel_edge_detection(row + width / 2, col, width / 2, height / 2, inBuffer, outBuffer, _width, _height); });
+		t.run([&] {next_iter_parallel_edge_detection(row, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width, _height); });
+		t.run([&] {next_iter_parallel_edge_detection(row + width / 2, col + height / 2, width / 2, height / 2, inBuffer, outBuffer, _width, _height); });
 		t.wait();
 	}
 }
@@ -175,7 +179,14 @@ void next_iter_parallel_edge_detection(int row, int col, int width, int height, 
 */
 void filter_parallel_edge_detection(int *inBuffer, int *outBuffer, int width, int height)
 {
-	next_iter_parallel_edge_detection(0, 0, width, height, inBuffer, outBuffer, width);
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < height; j++) {
+			int index = j * width + i;
+			if (inBuffer[index] >= THRESHOLD) inBuffer[index] = 0;
+			else inBuffer[index] = 1;
+		}
+	}
+	next_iter_parallel_edge_detection(0, 0, width, height, inBuffer, outBuffer, width, height);
 }
 
 /**
@@ -204,7 +215,7 @@ void run_test_nr(int testNr, BitmapRawConverter* ioFile, char* outFileName, int*
 			break;
 		case 2:
 			cout << "Running parallel version of edge detection using Prewitt operator" << endl;
-			filter_parallel_prewitt(0, 0, width, height, ioFile->getBuffer(), outBuffer, width);
+			filter_parallel_prewitt(0, 0, width, height, ioFile->getBuffer(), outBuffer, width, height);
 			break;
 		case 3:
 			cout << "Running serial version of edge detection" << endl;
