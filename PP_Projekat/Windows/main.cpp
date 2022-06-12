@@ -137,8 +137,7 @@ void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int 
 }
 
 void next_iter_parallel_edge_detection(int row, int col, int width, int height, int* inBuffer, int* outBuffer, int _width, int _height) {
-	if (width <= 200 && height <= 200) {
-
+	if (width <= 200 || height <= 200) {
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
 				int P = 0, O = 1, G = 0;
