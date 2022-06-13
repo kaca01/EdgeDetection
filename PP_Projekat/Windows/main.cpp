@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <tbb/task_group.h>
+#include <tbb/tick_count.h>
 #include "BitmapRawConverter.h"
 
 #define __ARG_NUM__				6
@@ -204,7 +205,8 @@ void run_test_nr(int testNr, BitmapRawConverter* ioFile, char* outFileName, int*
 {
 
 	// TODO: start measure
-	
+
+	tick_count startCount = tick_count::now();
 
 	switch (testNr)
 	{
@@ -229,6 +231,8 @@ void run_test_nr(int testNr, BitmapRawConverter* ioFile, char* outFileName, int*
 			break;
 	}
 	// TODO: end measure and display time
+	tick_count endCount = tick_count::now();
+	cout << "Elapsed time: " << (endCount - startCount).seconds() * 1000 << " ms." << endl;
 
 	ioFile->setBuffer(outBuffer);
 	ioFile->pixelsToBitmap(outFileName);
