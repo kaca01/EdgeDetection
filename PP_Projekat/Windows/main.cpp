@@ -7,13 +7,23 @@
 #define __ARG_NUM__				6
 #define FILTER_SIZE				3
 #define THRESHOLD				128
+#define CUTOFF                  200
+#define DISTANCE                1
 
 using namespace std;
 using namespace tbb;
 
+
 // Prewitt operators
 int filterHor[FILTER_SIZE * FILTER_SIZE] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
 int filterVer[FILTER_SIZE * FILTER_SIZE] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
+
+
+bool check_if_border_case(int index, int height, int width) {
+	if ((index <= 0) || (index >= width * height)) return true;
+	return false;
+}
+
 
 /**
 * @brief Serial version of edge detection algorithm implementation using Prewitt operator
@@ -23,25 +33,20 @@ int filterVer[FILTER_SIZE * FILTER_SIZE] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 * @param height image height
 */
 
-
-bool check_if_border_case(int index, int height, int width) {
-	if ((index <= 0) || (index >= width * height)) return true;
-	return false;
-}
-
-
 void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)  //TODO obrisati
 {
+	int offset = (FILTER_SIZE - 1) / 2;
+
 	for (int i = 0; i < width; i++) { 
 		for (int j = 0; j < height; j++) {
 			int Gx = 0, Gy = 0, G = 0;
 			
-			for (int m = -1; m <= 1; m++) {
-				for (int n = -1; n <= 1; n++) {
-					int index = (j + n) * width + (i + m);
+			for (int m = 0; m < FILTER_SIZE; m++) {
+				for (int n = 0; n < FILTER_SIZE; n++) {
+					int index = (j - offset + m) * width + (i - offset + n);
 					if (check_if_border_case(index, height, width)) continue;
-					Gx += inBuffer[index] * n; 
-					Gy += inBuffer[index] * m;
+					Gx += inBuffer[index] * filterHor[m * FILTER_SIZE + n]; 
+					Gy += inBuffer[index] * filterVer[m * FILTER_SIZE + n];
 				}
 			}
 			G = abs(Gx) + abs(Gy);
@@ -67,17 +72,19 @@ void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)
 
 void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuffer, int *outBuffer, int _width, int _height)
 {
-	if (width <= 200 || height <= 200) {
+	int offset = (FILTER_SIZE - 1) / 2;
+
+	if (width <= CUTOFF || height <= CUTOFF) {
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
 				int Gx = 0, Gy = 0, G = 0;
 
-				for (int m = -1; m <= 1; m++) {
-					for (int n = -1; n <= 1; n++) {
-						int index = (j + n + col) * _width + (i + m + row);
+				for (int m = 0; m < FILTER_SIZE; m++) {
+					for (int n = 0; n < FILTER_SIZE; n++) {
+						int index = (j + m + col - offset) * _width + (i + n + row - offset);
 						if(check_if_border_case(index, _height, _width)) continue;
-						Gx += inBuffer[index] * n;
-						Gy += inBuffer[index] * m;
+						Gx += inBuffer[index] * filterHor[m * FILTER_SIZE + n];
+						Gy += inBuffer[index] * filterVer[m * FILTER_SIZE + n];
 					}
 				}
 				G = abs(Gx) + abs(Gy);
@@ -107,6 +114,8 @@ void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuf
 */
 void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int height)	//TODO obrisati
 {
+	int iter = DISTANCE * 2 + 1;
+
 	// setting every element to 0 or 1, depending on threshold
 	for (int i = 0; i < width; i++) {
 		for (int j = 0; j < height; j++) {
@@ -120,9 +129,9 @@ void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int 
 		for (int j = 0; j < height; j++) {
 			int P = 0, O = 1, G = 0;
 
-			for (int m = -1; m <= 1; m++) {
-				for (int n = -1; n <= 1; n++) {
-					int index = (j + n) * width + (i + m);
+			for (int m = 0; m < iter; m++) {
+				for (int n = 0; n < iter; n++) {
+					int index = (j - DISTANCE + m) * width + (i - DISTANCE + n);
 					if (check_if_border_case(index, height, width)) continue;
 					if (m == 0 && n == 0) continue;
 					if (inBuffer[index] == 1) P = 1;
@@ -138,14 +147,16 @@ void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int 
 }
 
 void next_iter_parallel_edge_detection(int row, int col, int width, int height, int* inBuffer, int* outBuffer, int _width, int _height) {
-	if (width <= 200 || height <= 200) {
+	int iter = DISTANCE * 2 + 1;
+	
+	if (width <= CUTOFF || height <= CUTOFF) {
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
 				int P = 0, O = 1, G = 0;
 
-				for (int m = -1; m <= 1; m++) {
-					for (int n = -1; n <= 1; n++) {
-						int index = (j + n + col) * _width + (i + m + row);
+				for (int m = 0; m < iter; m++) {
+					for (int n = 0; n < iter; n++) {
+						int index = (j + n + col - DISTANCE) * _width + (i + m + row - DISTANCE);
 						if (check_if_border_case(index, _height, _width)) continue;
 						if (m == 0 && n == 0) continue;
 						if (inBuffer[index] == 1) P = 1;
@@ -203,9 +214,6 @@ void filter_parallel_edge_detection(int *inBuffer, int *outBuffer, int width, in
 
 void run_test_nr(int testNr, BitmapRawConverter* ioFile, char* outFileName, int* outBuffer, unsigned int width, unsigned int height)
 {
-
-	// TODO: start measure
-
 	tick_count startCount = tick_count::now();
 
 	switch (testNr)
@@ -230,7 +238,6 @@ void run_test_nr(int testNr, BitmapRawConverter* ioFile, char* outFileName, int*
 			cout << "ERROR: invalid test case, must be 1, 2, 3 or 4!";
 			break;
 	}
-	// TODO: end measure and display time
 	tick_count endCount = tick_count::now();
 	cout << "Elapsed time: " << (endCount - startCount).seconds() * 1000 << " ms." << endl;
 
