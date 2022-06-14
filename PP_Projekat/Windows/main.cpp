@@ -8,7 +8,7 @@
 #define FILTER_SIZE				3
 #define THRESHOLD				128
 #define CUTOFF                  200
-#define DISTANCE                1
+#define DISTANCE                3
 
 using namespace std;
 using namespace tbb;
@@ -19,6 +19,9 @@ int filterHor[FILTER_SIZE * FILTER_SIZE] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
 int filterVer[FILTER_SIZE * FILTER_SIZE] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 
 
+/*
+* @brief  
+*/
 bool check_if_border_case(int index, int height, int width) {
 	if ((index <= 0) || (index >= width * height)) return true;
 	return false;
@@ -33,7 +36,7 @@ bool check_if_border_case(int index, int height, int width) {
 * @param height image height
 */
 
-void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)  //TODO obrisati
+void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height) 
 {
 	int offset = (FILTER_SIZE - 1) / 2;
 
