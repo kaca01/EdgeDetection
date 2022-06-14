@@ -20,7 +20,11 @@ int filterVer[FILTER_SIZE * FILTER_SIZE] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 
 
 /*
-* @brief  
+* @brief checking if index is in range of matrix indices
+* 
+* @param index index that we need to chech
+* @param height image height
+* @param width image width
 */
 bool check_if_border_case(int index, int height, int width) {
 	if ((index <= 0) || (index >= width * height)) return true;
@@ -110,6 +114,7 @@ void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuf
 
 /**
 * @brief Serial version of edge detection algorithm
+* 
 * @param inBuffer buffer of input image
 * @param outBuffer buffer of output image
 * @param width image width
@@ -148,6 +153,19 @@ void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int 
 		}
 	}
 }
+
+/*
+* @brief parallel version of edge detecion algorithm
+* 
+* @param row row in submatrix 
+* @param col col in submatrix
+* @param width image width
+* @param height image height
+* @param inBuffer buffer of input image
+* @param outBuffer buffer of output image
+* @param _height height of submatrix
+* @param _width width of submatrix
+*/
 
 void next_iter_parallel_edge_detection(int row, int col, int width, int height, int* inBuffer, int* outBuffer, int _width, int _height) {
 	int iter = DISTANCE * 2 + 1;
