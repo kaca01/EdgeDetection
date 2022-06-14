@@ -8,7 +8,7 @@
 #define FILTER_SIZE				3
 #define THRESHOLD				128
 #define CUTOFF                  200
-#define DISTANCE                1
+#define DISTANCE                3
 
 using namespace std;
 using namespace tbb;
@@ -19,6 +19,13 @@ int filterHor[FILTER_SIZE * FILTER_SIZE] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
 int filterVer[FILTER_SIZE * FILTER_SIZE] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 
 
+/*
+* @brief checking if index is in range of matrix indices
+* 
+* @param index index that we need to chech
+* @param height image height
+* @param width image width
+*/
 bool check_if_border_case(int index, int height, int width) {
 	if ((index <= 0) || (index >= width * height)) return true;
 	return false;
@@ -33,7 +40,7 @@ bool check_if_border_case(int index, int height, int width) {
 * @param height image height
 */
 
-void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height)  //TODO obrisati
+void filter_serial_prewitt(int *inBuffer, int *outBuffer, int width, int height) 
 {
 	int offset = (FILTER_SIZE - 1) / 2;
 
@@ -107,6 +114,7 @@ void filter_parallel_prewitt(int row, int col, int width, int height, int *inBuf
 
 /**
 * @brief Serial version of edge detection algorithm
+* 
 * @param inBuffer buffer of input image
 * @param outBuffer buffer of output image
 * @param width image width
@@ -145,6 +153,19 @@ void filter_serial_edge_detection(int *inBuffer, int *outBuffer, int width, int 
 		}
 	}
 }
+
+/*
+* @brief parallel version of edge detecion algorithm
+* 
+* @param row row in submatrix 
+* @param col col in submatrix
+* @param width image width
+* @param height image height
+* @param inBuffer buffer of input image
+* @param outBuffer buffer of output image
+* @param _height height of submatrix
+* @param _width width of submatrix
+*/
 
 void next_iter_parallel_edge_detection(int row, int col, int width, int height, int* inBuffer, int* outBuffer, int _width, int _height) {
 	int iter = DISTANCE * 2 + 1;
