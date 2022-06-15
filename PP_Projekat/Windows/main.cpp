@@ -4,11 +4,11 @@
 #include <tbb/tick_count.h>
 #include "BitmapRawConverter.h"
 
-#define __ARG_NUM__				6
-#define FILTER_SIZE				3
+#define __ARG_NUM__				8
+#define FILTER_SIZE				7
 #define THRESHOLD				128
-#define CUTOFF                  200
-#define DISTANCE                3
+extern int CUTOFF = 200;
+extern int DISTANCE = 1;
 
 using namespace std;
 using namespace tbb;
@@ -288,6 +288,9 @@ int main(int argc, char * argv[])
 		usage();
 		return 0;
 	}
+
+	CUTOFF = atoi(argv[6]);
+	DISTANCE = atoi(argv[7]);
 
 	BitmapRawConverter inputFile(argv[1]);
 	BitmapRawConverter outputFileSerialPrewitt(argv[1]);
